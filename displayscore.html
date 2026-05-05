@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Display</title>
+  <title>Display - Taekwondo Scoreboard</title>
   <style>
     body {
       margin:0;
-      background: linear-gradient(to right, red 50%, blue 50%);
+      background: linear-gradient(to right, #d32f2f 50%, #1976d2 50%);
       color:white;
-      font-family: Arial;
+      font-family: 'Arial Black', sans-serif;
       text-align:center;
+      overflow: hidden;
     }
 
     .container {
@@ -22,41 +23,84 @@
       flex-direction:column;
       justify-content:center;
       align-items:center;
+      position: relative;
     }
 
     .name {
-      font-size:110px;
-      margin-bottom:20px;
+      font-size:80px;
+      margin-bottom:10px;
+      text-transform: uppercase;
     }
 
     .score {
-      font-size:500px;
+      font-size:450px;
+      line-height: 1;
       font-weight:bold;
+    }
+
+    /* แต้มยก (Round Win) */
+    .round-win {
+      font-size: 100px;
+      background: rgba(255,255,255,0.2);
+      padding: 10px 40px;
+      border-radius: 20px;
+      margin-top: 20px;
     }
 
     .center {
       position:absolute;
       top:20px;
       width:100%;
-      text-align:center;
-      font-size:120px;
-      font-weight:bold;
+      z-index: 10;
+    }
+
+    #round { font-size: 80px; }
+    #time { 
+      font-size: 130px; 
+      background: #000; 
+      display: inline-block; 
+      padding: 10px 40px; 
+      border-radius: 20px;
+    }
+    
+    #winner {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 80px;
+      background: gold;
+      color: black;
+      padding: 50px;
+      display: none;
+      box-shadow: 0 0 50px rgba(0,0,0,0.5);
     }
   </style>
 </head>
 <body>
 
-<div class="center" id="time">02:00</div>
+<!-- เสียงสัญญาณ -->
+<audio id="beep" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+<audio id="buzzer" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_77ace632aa.mp3?filename=freesound_community-error-83494.mp3"></audio>
+
+<div id="winner"></div>
+
+<div class="center">
+  <div id="round">ROUND 1</div>
+  <div id="time">02:00</div>
+</div>
 
 <div class="container">
   <div class="side">
     <div class="name" id="redName">RED</div>
     <div class="score" id="red">0</div>
+    <div class="round-win" id="redRW">0</div>
   </div>
 
   <div class="side">
     <div class="name" id="blueName">BLUE</div>
     <div class="score" id="blue">0</div>
+    <div class="round-win" id="blueRW">0</div>
   </div>
 </div>
 
@@ -71,34 +115,49 @@ const firebaseConfig = {
   projectId: "teakwondo-score",
 };
 
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// คะแนน
-db.ref('red').on('value', snap=>{
-  document.getElementById("red").innerText = snap.val() || 0;
-});
-db.ref('blue').on('value', snap=>{
-  document.getElementById("blue").innerText = snap.val() || 0;
-});
+// คะแนน & ชื่อ
+db.ref('red').on('value', snap=> document.getElementById("red").innerText = snap.val() || 0);
+db.ref('blue').on('value', snap=> document.getElementById("blue").innerText = snap.val() || 0);
+db.ref('redName').on('value', snap=> document.getElementById("redName").innerText = snap.val() || "RED");
+db.ref('blueName').on('value', snap=> document.getElementById("blueName").innerText = snap.val() || "BLUE");
 
-// ชื่อ
-db.ref('redName').on('value', snap=>{
-  document.getElementById("redName").innerText = snap.val() || "RED";
-});
-db.ref('blueName').on('value', snap=>{
-  document.getElementById("blueName").innerText = snap.val() || "BLUE";
-});
+// แต้มยก (Round Win)
+db.ref('redRoundWin').on('value', snap=> document.getElementById("redRW").innerText = snap.val() || 0);
+db.ref('blueRoundWin').on('value', snap=> document.getElementById("blueRW").innerText = snap.val() || 0);
 
-// เวลา
+// ยกปัจจุบัน
+db.ref('round').on('value', snap=> document.getElementById("round").innerText = "ROUND " + (snap.val() || 1));
+
+// เวลาและเสียงสัญญาณ
 db.ref("time").on("value", snap=>{
-  let t = snap.val() || 120;
+  let t = snap.val() || 0;
   let m = String(Math.floor(t/60)).padStart(2,'0');
   let s = String(t%60).padStart(2,'0');
   document.getElementById("time").innerText = m+":"+s;
+
+  // เล่นเสียงเตือน 10 วินาทีสุดท้าย
+  if(t <= 10 && t > 0) {
+    document.getElementById("beep").play().catch(e=>{});
+  }
+  // เสียงหมดเวลา
+  if(t === 0) {
+    document.getElementById("buzzer").play().catch(e=>{});
+  }
+});
+
+// ผู้ชนะ
+db.ref('winner').on('value', snap=>{
+  const winEl = document.getElementById("winner");
+  if(snap.val()) {
+    winEl.innerText = snap.val();
+    winEl.style.display = "block";
+  } else {
+    winEl.style.display = "none";
+  }
 });
 </script>
-
 </body>
 </html>
