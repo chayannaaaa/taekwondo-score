@@ -134,22 +134,39 @@ db.ref('blue').on('value', s=> blue.innerText = s.val()||0);
 let timer = null;
 let time = 120;
 
-function updateTime(){ db.ref("time").set(time); }
-
-function start(){
-  if(timer) return;
-  timer = setInterval(()=>{
-    if(time <= 0) return stop();
-    time--; updateTime();
-  },1000);
+function updateTime(){
+  db.ref("time").set(time);
 }
 
-function stop(){ clearInterval(timer); timer=null; }
+// ▶ Start
+function start(){
+  if(timer !== null) return; // กันกดซ้ำ
 
+  timer = setInterval(()=>{
+    if(time <= 0){
+      stop();
+      return;
+    }
+
+    time--;
+    updateTime();
+
+  }, 1000);
+}
+
+// ⏸ Stop
+function stop(){
+  if(timer !== null){
+    clearInterval(timer);
+    timer = null; // ❗ สำคัญมาก
+  }
+}
+
+// 🔄 Reset
 function resetTime(){
-  stop();        // 🛑 หยุดเวลาก่อน
-  time = 120;    // ⏱ ตั้งค่าใหม่ (2 นาที)
-  updateTime();  // 🔄 อัปเดต Firebase
+  stop(); // ❗ หยุดก่อน
+  time = 120;
+  updateTime();
 }
 
 db.ref("time").on("value", snap=>{
