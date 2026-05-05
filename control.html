@@ -1,102 +1,70 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Control</title>
+  <title>Control - Taekwondo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <style>
-    body {
-      font-family: Arial;
-      text-align: center;
-      background: #111;
-      color: white;
-    }
-
-    
-    .container {
-      display: flex;
-      justify-content: space-around;
-      flex-wrap: wrap;
-    }
-
-    .section {
-      width: 45%;
-      padding: 20px;
-      border-radius: 20px;
-    }
-
-    .red-bg { background: #2b0000; }
-    .blue-bg { background: #001a2b; }
-
-    .score {
-      font-size: 80px;
-      margin: 10px;
-    }
-
-    .btn {
-      font-size: 28px;
-      padding: 20px 30px;
-      margin: 10px;
-      border: none;
-      border-radius: 15px;
-      cursor: pointer;
-    }
-
+    body { font-family: Arial; text-align: center; background: #111; color: white; margin: 0; padding: 10px; }
+    .container { display: flex; justify-content: space-around; gap: 10px; }
+    .section { flex: 1; padding: 15px; border-radius: 15px; }
+    .red-bg { background: #420000; border: 2px solid red; }
+    .blue-bg { background: #001a42; border: 2px solid dodgerblue; }
+    .score { font-size: 60px; margin: 10px; font-weight: bold; }
+    .rw-display { font-size: 20px; color: gold; margin-bottom: 10px; }
+    input { width: 80%; padding: 8px; margin-bottom: 10px; border-radius: 5px; border: none; }
+    .btn { font-size: 20px; padding: 15px; margin: 5px; border: none; border-radius: 10px; cursor: pointer; min-width: 60px; }
     .red { background: red; color: white; }
     .blue { background: dodgerblue; color: white; }
-
-    .big { font-size: 40px; padding: 30px 40px; }
-    .small { font-size: 20px; padding: 15px 20px; }
-
-    .control-bar {
-      margin-top: 20px;
-    }
+    .control-bar { margin-top: 20px; background: #222; padding: 20px; border-top: 2px solid #444; }
+    .big-time { font-size: 50px; margin: 10px 0; color: #0f0; }
+    .btn-main { background: white; color: black; font-weight: bold; padding: 20px 40px; }
+    .btn-reset { background: #555; color: white; font-size: 14px; }
   </style>
 </head>
-
 <body>
 
 <div class="container">
-
-  <!-- 🔴 RED -->
   <div class="section red-bg">
-    <h2>RED</h2>
-    <input id="redName" placeholder="ชื่อนักกีฬาแดง">
-    <div class="score" id="red">0</div>
-
-    <button class="btn red big" onclick="add('red',3)">+3</button>
+    <input id="redNameInput" placeholder="ชื่อ RED">
+    <div class="rw-display">ROUND WIN: <span id="redRW">0</span></div>
+    <div class="score" id="redDisp">0</div>
+    <button class="btn red" onclick="add('red',3)">+3</button>
     <button class="btn red" onclick="add('red',2)">+2</button>
     <button class="btn red" onclick="add('red',1)">+1</button>
-    <button class="btn small" onclick="add('red',-1)">-1</button>
+    <button class="btn" onclick="add('red',-1)">-1</button>
   </div>
 
-  <!-- 🔵 BLUE -->
   <div class="section blue-bg">
-    <h2>BLUE</h2>
-    <input id="blueName" placeholder="ชื่อนักกีฬาน้ำเงิน">
-    <div class="score" id="blue">0</div>
-
-    <button class="btn blue big" onclick="add('blue',3)">+3</button>
+    <input id="blueNameInput" placeholder="ชื่อ BLUE">
+    <div class="rw-display">ROUND WIN: <span id="blueRW">0</span></div>
+    <div class="score" id="blueDisp">0</div>
+    <button class="btn blue" onclick="add('blue',3)">+3</button>
     <button class="btn blue" onclick="add('blue',2)">+2</button>
     <button class="btn blue" onclick="add('blue',1)">+1</button>
-    <button class="btn small" onclick="add('blue',-1)">-1</button>
+    <button class="btn" onclick="add('blue',-1)">-1</button>
   </div>
-
 </div>
 
-<!-- ⏱ TIME -->
 <div class="control-bar">
-  <h1 id="time">02:00</h1>
-
-  <button class="btn big" onclick="start()">▶ Start</button>
-  <button class="btn" onclick="stop()">⏸ Stop</button>
-  <button class="btn" onclick="resetTime()">🔄 Reset Time</button>
-  <button class="btn small" onclick="resetScore()">Reset Score</button>
+  <div id="roundDisp" style="font-size: 24px;">ROUND 1</div>
+  <div class="big-time" id="timeDisp">02:00</div>
+  
+  <input type="number" id="setTime" placeholder="วินาที (เช่น 120)" style="width: 100px;">
+  <button onclick="applyTime()">Set Time</button>
+  <br><br>
+  
+  <button class="btn btn-main" onclick="startTimer()">▶ START</button>
+  <button class="btn btn-main" style="background:#ff9800" onclick="stopTimer()">⏸ STOP</button>
+  <br>
+  <button class="btn btn-reset" onclick="nextRound()">⏭ Next Round / End Time</button>
+  <button class="btn btn-reset" onclick="fullReset()">🔄 Reset All Game</button>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script>
+// Firebase Config (ชุดเดียวกับ Display)
 const firebaseConfig = {
   apiKey: "AIzaSyDPV8RjTm_sj_IQ_PwFa3zTLWeFhWjiSj4",
   authDomain: "teakwondo-score.firebaseapp.com",
@@ -107,76 +75,120 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ✅ คะแนน
-function add(team, val){
-  db.ref(team).once('value').then(snap=>{
-    let score = snap.val() || 0;
-    let newScore = Math.max(0, score + val);
+let timer = null;
+let currentTime = 120;
+let currentRound = 1;
+let redRW = 0;
+let blueRW = 0;
+
+// ดึงค่าเริ่มต้นจาก DB
+db.ref('red').on('value', s => document.getElementById('redDisp').innerText = s.val() || 0);
+db.ref('blue').on('value', s => document.getElementById('blueDisp').innerText = s.val() || 0);
+db.ref('redRoundWin').on('value', s => { redRW = s.val() || 0; document.getElementById('redRW').innerText = redRW; });
+db.ref('blueRoundWin').on('value', s => { blueRW = s.val() || 0; document.getElementById('blueRW').innerText = blueRW; });
+db.ref('round').on('value', s => { currentRound = s.val() || 1; document.getElementById('roundDisp').innerText = "ROUND " + currentRound; });
+db.ref('time').on('value', s => {
+  currentTime = s.val() || 0;
+  let m = String(Math.floor(currentTime/60)).padStart(2,'0');
+  let s_val = String(currentTime%60).padStart(2,'0');
+  document.getElementById("timeDisp").innerText = m+":"+s_val;
+});
+
+// ฟังก์ชันควบคุมคะแนน
+function add(team, val) {
+  db.ref(team).once('value').then(snap => {
+    let newScore = Math.max(0, (snap.val() || 0) + val);
     db.ref(team).set(newScore);
+    checkPointGap();
   });
 }
 
-function resetScore(){
-  if(confirm("รีเซ็ตคะแนน?")){
-    db.ref("red").set(0);
-    db.ref("blue").set(0);
-  }
+function checkPointGap() {
+  db.ref().once('value').then(snap => {
+    let data = snap.val();
+    if(Math.abs((data.red || 0) - (data.blue || 0)) >= 12) {
+      stopTimer();
+      alert("Point Gap! จบยกทันที");
+      nextRound();
+    }
+  });
 }
 
-// ✅ ชื่อ
-redName.oninput = e=> db.ref("redName").set(e.target.value);
-blueName.oninput = e=> db.ref("blueName").set(e.target.value);
-
-// sync
-db.ref('red').on('value', s=> red.innerText = s.val()||0);
-db.ref('blue').on('value', s=> blue.innerText = s.val()||0);
-
-// ⏱ TIMER
-let timer = null;
-let time = 120;
-
-function updateTime(){
-  db.ref("time").set(time);
-}
-
-// ▶ Start
-function start(){
-  if(timer !== null) return; // กันกดซ้ำ
-
-  timer = setInterval(()=>{
-    if(time <= 0){
-      stop();
+// ฟังก์ชันเวลา
+function startTimer() {
+  if (timer) return;
+  timer = setInterval(() => {
+    if (currentTime <= 0) {
+      stopTimer();
+      nextRound(); // หมดเวลาให้จบยกและนับแต้มทันที
       return;
     }
-
-    time--;
-    updateTime();
-
+    currentTime--;
+    db.ref('time').set(currentTime);
   }, 1000);
 }
 
-// ⏸ Stop
-function stop(){
-  if(timer !== null){
-    clearInterval(timer);
-    timer = null; // ❗ สำคัญมาก
+function stopTimer() {
+  clearInterval(timer);
+  timer = null;
+}
+
+function applyTime() {
+  let v = parseInt(document.getElementById("setTime").value);
+  if(!isNaN(v)) db.ref('time').set(v);
+}
+
+// จบยก/หมดเวลา: คำนวณแต้มยก
+function nextRound() {
+  stopTimer();
+  db.ref().once('value').then(snap => {
+    let data = snap.val();
+    let rScore = data.red || 0;
+    let bScore = data.blue || 0;
+
+    if (rScore > bScore) {
+      redRW++;
+      db.ref('redRoundWin').set(redRW);
+    } else if (bScore > rScore) {
+      blueRW++;
+      db.ref('blueRoundWin').set(blueRW);
+    }
+
+    if (currentRound >= 3 || redRW >= 2 || blueRW >= 2) {
+      determineWinner();
+    } else {
+      currentRound++;
+      db.ref('round').set(currentRound);
+      db.ref('red').set(0);
+      db.ref('blue').set(0);
+      db.ref('time').set(120);
+      alert("เริ่มยกที่ " + currentRound);
+    }
+  });
+}
+
+function determineWinner() {
+  let winnerText = "DRAW";
+  if (redRW > blueRW) winnerText = "RED WINNER!";
+  else if (blueRW > redRW) winnerText = "BLUE WINNER!";
+  db.ref('winner').set(winnerText);
+}
+
+function fullReset() {
+  if(confirm("ล้างข้อมูลทั้งหมดเพื่อเริ่มเกมใหม่?")) {
+    db.ref().set({
+      red: 0, blue: 0,
+      redRoundWin: 0, blueRoundWin: 0,
+      round: 1, time: 120, winner: ""
+    });
+    stopTimer();
   }
 }
 
-// 🔄 Reset
-function resetTime(){
-  stop(); // ❗ หยุดก่อน
-  time = 120;
-  updateTime();
-}
+// ชื่อนักกีฬา
+document.getElementById('redNameInput').oninput = e => db.ref('redName').set(e.target.value);
+document.getElementById('blueNameInput').oninput = e => db.ref('blueName').set(e.target.value);
 
-db.ref("time").on("value", snap=>{
-  time = snap.val() || 120;
-  let m = String(Math.floor(time/60)).padStart(2,'0');
-  let s = String(time%60).padStart(2,'0');
-  document.getElementById("time").innerText = m+":"+s;
-});
 </script>
-
 </body>
 </html>
