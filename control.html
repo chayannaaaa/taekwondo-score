@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Control</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: #111;
+      color: white;
+    }
+
+    .container {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+    }
+
+    .section {
+      width: 45%;
+      padding: 20px;
+      border-radius: 20px;
+    }
+
+    .red-bg { background: #2b0000; }
+    .blue-bg { background: #001a2b; }
+
+    .score {
+      font-size: 80px;
+      margin: 10px;
+    }
+
+    .btn {
+      font-size: 28px;
+      padding: 20px 30px;
+      margin: 10px;
+      border: none;
+      border-radius: 15px;
+      cursor: pointer;
+    }
+
+    .red { background: red; color: white; }
+    .blue { background: dodgerblue; color: white; }
+
+    .big { font-size: 40px; padding: 30px 40px; }
+    .small { font-size: 20px; padding: 15px 20px; }
+
+    .control-bar {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- 🔴 RED -->
+  <div class="section red-bg">
+    <h2>RED</h2>
+    <input id="redName" placeholder="ชื่อนักกีฬาแดง">
+    <div class="score" id="red">0</div>
+
+    <button class="btn red big" onclick="add('red',3)">+3</button>
+    <button class="btn red" onclick="add('red',2)">+2</button>
+    <button class="btn red" onclick="add('red',1)">+1</button>
+    <button class="btn small" onclick="add('red',-1)">-1</button>
+  </div>
+
+  <!-- 🔵 BLUE -->
+  <div class="section blue-bg">
+    <h2>BLUE</h2>
+    <input id="blueName" placeholder="ชื่อนักกีฬาน้ำเงิน">
+    <div class="score" id="blue">0</div>
+
+    <button class="btn blue big" onclick="add('blue',3)">+3</button>
+    <button class="btn blue" onclick="add('blue',2)">+2</button>
+    <button class="btn blue" onclick="add('blue',1)">+1</button>
+    <button class="btn small" onclick="add('blue',-1)">-1</button>
+  </div>
+
+</div>
+
+<!-- ⏱ TIME -->
+<div class="control-bar">
+  <h1 id="time">02:00</h1>
+
+  <button class="btn big" onclick="start()">▶ Start</button>
+  <button class="btn" onclick="stop()">⏸ Stop</button>
+  <button class="btn" onclick="resetTime()">🔄 Reset Time</button>
+  <button class="btn small" onclick="resetScore()">Reset Score</button>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDPV8RjTm_sj_IQ_PwFa3zTLWeFhWjiSj4",
+  authDomain: "teakwondo-score.firebaseapp.com",
+  databaseURL: "https://teakwondo-score-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "teakwondo-score",
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ✅ คะแนน
+function add(team, val){
+  db.ref(team).once('value').then(snap=>{
+    let score = snap.val() || 0;
+    let newScore = Math.max(0, score + val);
+    db.ref(team).set(newScore);
+  });
+}
+
+function resetScore(){
+  if(confirm("รีเซ็ตคะแนน?")){
+    db.ref("red").set(0);
+    db.ref("blue").set(0);
+  }
+}
+
+// ✅ ชื่อ
+redName.oninput = e=> db.ref("redName").set(e.target.value);
+blueName.oninput = e=> db.ref("blueName").set(e.target.value);
+
+// sync
+db.ref('red').on('value', s=> red.innerText = s.val()||0);
+db.ref('blue').on('value', s=> blue.innerText = s.val()||0);
+
+// ⏱ TIMER
+let timer = null;
+let time = 120;
+
+function updateTime(){ db.ref("time").set(time); }
+
+function start(){
+  if(timer) return;
+  timer = setInterval(()=>{
+    if(time <= 0) return stop();
+    time--; updateTime();
+  },1000);
+}
+
+function stop(){ clearInterval(timer); timer=null; }
+
+function resetTime(){
+  stop();        // 🛑 หยุดเวลาก่อน
+  time = 120;    // ⏱ ตั้งค่าใหม่ (2 นาที)
+  updateTime();  // 🔄 อัปเดต Firebase
+}
+
+db.ref("time").on("value", snap=>{
+  time = snap.val() || 120;
+  let m = String(Math.floor(time/60)).padStart(2,'0');
+  let s = String(time%60).padStart(2,'0');
+  document.getElementById("time").innerText = m+":"+s;
+});
+</script>
+
+</body>
+</html>
